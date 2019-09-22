@@ -40,6 +40,9 @@ class VideoMetadata(object):
     new_height = new_width * self.ratio().denominator / self.ratio().numerator
     return VideoMetadata(int(new_width), int(new_height))
   
+  def __str__(self):
+    return "width,height : " + str(self.width) + "," + str(self.height)
+  
   @staticmethod
   def from_json(json_dict):
     if 'sample_aspect_ratio' in json_dict.keys():
@@ -145,12 +148,12 @@ if __name__ == '__main__':
   arguments = docopt(__doc__, version='Picture in Picture 1.0')
   check_arguments(arguments)
   background_meta = extract_metadata(arguments['<background_video>'])
-  print("Background width,height : " + str(background_meta.width) + "," + str(background_meta.height))
+  print("Background " + str(background_meta))
   overlay_meta = extract_metadata(arguments['<overlay_video>'])
-  print("Overlay width,height : " + str(overlay_meta.width) + "," + str(overlay_meta.height))
+  print("Overlay " + str(overlay_meta))
   new_video_meta = background_meta
   resized_overlay_meta = overlay_meta.width_scale(arguments['--ratio'])
-  print("Resized width,height : " + str(resized_overlay_meta.width) + "," + str(resized_overlay_meta.height))
+  print("Resized " + str(resized_overlay_meta))
   positionStrategy = detect(Position.__subclasses__(), lambda strategy : strategy.cmd_name() == arguments['--position'])()
   position = positionStrategy.compute_background_position(background_meta, resized_overlay_meta)
   print("Overlay position : " + str(position))
