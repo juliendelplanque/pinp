@@ -58,6 +58,12 @@ class Position(object):
   @staticmethod
   def cmd_name():
     raise NotImplementedError
+  
+  @staticmethod
+  def from_name(cmd_name):
+    return detect(
+      Position.__subclasses__(),
+      lambda strategy : strategy.cmd_name() == cmd_name)()
 
   def compute_background_position(self, background_meta, overlay_meta):
     raise NotImplementedError
@@ -154,7 +160,7 @@ if __name__ == '__main__':
   new_video_meta = background_meta
   resized_overlay_meta = overlay_meta.width_scale(arguments['--ratio'])
   print("Resized " + str(resized_overlay_meta))
-  positionStrategy = detect(Position.__subclasses__(), lambda strategy : strategy.cmd_name() == arguments['--position'])()
+  positionStrategy = Position.from_name(arguments['--position'])
   position = positionStrategy.compute_background_position(background_meta, resized_overlay_meta)
   print("Overlay position : " + str(position))
   apply_ffmpeg_overlay(
