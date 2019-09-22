@@ -25,11 +25,13 @@ from docopt import docopt
 import os
 import json
 from fractions import Fraction
+from datetime import timedelta
 
 class VideoMetadata(object):
-  def __init__(self, width, height, sample_aspect_ratio=Fraction(1,1)):
-    self.width=width
-    self.height=height
+  def __init__(self, width, height, duration, sample_aspect_ratio=Fraction(1,1)):
+    self.width = width
+    self.height = height
+    self.duration = duration
     self.sample_aspect_ratio = sample_aspect_ratio
 
   def ratio(self):
@@ -38,10 +40,10 @@ class VideoMetadata(object):
   def width_scale(self, scale_ratio):
     new_width = self.width*scale_ratio
     new_height = new_width * self.ratio().denominator / self.ratio().numerator
-    return VideoMetadata(int(new_width), int(new_height))
+    return VideoMetadata(int(new_width), int(new_height), self.duration)
   
   def __str__(self):
-    return "width,height : " + str(self.width) + "," + str(self.height)
+    return "width,height,duration : " + str(self.width) + "," + str(self.height) + "," + str(self.duration)
   
   @staticmethod
   def from_json(json_dict):
@@ -52,6 +54,7 @@ class VideoMetadata(object):
     return VideoMetadata(
       int(json_dict['width']),
       int(json_dict['height']),
+      timedelta(seconds=float(json_dict['duration'])),
       Fraction(sample_aspect_ratio[0], sample_aspect_ratio[1]))
 
 class Position(object):
