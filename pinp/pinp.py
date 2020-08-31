@@ -130,6 +130,25 @@ def extract_metadata(filename):
   stream_dict = detect(metadata_json['streams'], lambda stream : stream['codec_type'] == 'video')
   return VideoMetadata.from_json(stream_dict)
 
+def ffmpeg_cut(video_filename, second, part1_filename, part2_filename):
+  ffmpeg_cmd = "ffmpeg -i "
+  ffmpeg_cmd += video_filename
+  ffmpeg_cmd += " -ss 0 -t "
+  ffmpeg_cmd += second
+  ffmpeg_cmd += " -vcodec copy -acodec copy "
+  ffmpeg_cmd += part1_filename
+  print(ffmpeg_cmd)
+  os.system(ffmpeg_cmd)
+
+  ffmpeg_cmd = "ffmpeg -i "
+  ffmpeg_cmd += video_filename
+  ffmpeg_cmd += " -ss "
+  ffmpeg_cmd += second
+  ffmpeg_cmd += " -vcodec copy -acodec copy "
+  ffmpeg_cmd += part2_filename
+  print(ffmpeg_cmd)
+  os.system(ffmpeg_cmd)
+
 def apply_ffmpeg_overlay(
   background_filename,
   overlay_filename,
@@ -156,10 +175,31 @@ def apply_ffmpeg_overlay(
 if __name__ == '__main__':
   arguments = docopt(__doc__, version='Picture in Picture 1.0')
   check_arguments(arguments)
-  background_meta = extract_metadata(arguments['<background_video>'])
+  background_file = arguments['<background_video>']
+  background_meta = extract_metadata(background_file)
   print("Background " + str(background_meta))
-  overlay_meta = extract_metadata(arguments['<overlay_video>'])
+  overlay_file = arguments['<overlay_video>']
+  overlay_meta = extract_metadata(overlay_file)
   print("Overlay " + str(overlay_meta))
+
+  background_second = arguments['--sync'][0]
+  overlay_second = arguments['--sync'][1]
+  if background_second - overlay_second < 0:
+    ffmpeg_cut(
+      overlay_file,
+      -(background_second - overlay_second),
+      "overlay-to-discard.mp4",
+      "overlay.mp4")
+    overlay_file = "overlay.mp4"
+  else if background_second - overlay_second > 0:
+    ffmpeg_cut(
+      background_file,
+      background_second - overlay_second,
+      "background-1.mp4",
+      "background-2.mp4")
+    overlay_file = "background-2.mp4"
+    
+
   new_video_meta = background_meta
   resized_overlay_meta = overlay_meta.width_scale(arguments['--ratio'])
   print("Resized " + str(resized_overlay_meta))
@@ -167,8 +207,8 @@ if __name__ == '__main__':
   position = positionStrategy.compute_background_position(background_meta, resized_overlay_meta)
   print("Overlay position : " + str(position))
   apply_ffmpeg_overlay(
-    arguments['<background_video>'],
-    arguments['<overlay_video>'],
+    background_file,
+    overlay_file,
     resized_overlay_meta,
     position,
     arguments['<new_video>'])
